@@ -18,26 +18,20 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Godot Engine
+        uses: chickenprogrammer/action-setup-godot@v2
+        with:
+          version: '4.3.0'
+          use-templates: true
+
       - name: Generate Android Debug Keystore
         run: |
           keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android \
             -keystore debug.keystore -storepass android \
             -dname "CN=Android Debug,O=Android,C=US" -validity 9999 -deststoretype pkcs12
 
-      - name: Download Godot 4.3 & Export Templates
+      - name: Configure Editor Settings for Keystore
         run: |
-          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip
-          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz
-          unzip -q Godot_v4.3-stable_linux.x86_64.zip
-          mkdir -p ~/.local/share/godot/export_templates/4.3.stable
-          unzip -q Godot_v4.3-stable_export_templates.tpz
-          mv templates/* ~/.local/share/godot/export_templates/4.3.stable/
-
-      - name: Create Default Icon & Configure Keystore
-        run: |
-          cat << 'EOF' > icon.svg
-          <svg height="128" width="128" xmlns="http://www.w3.org/2000/svg"><rect width="128" height="128" fill="#0a192f"/><circle cx="64" cy="64" r="45" fill="#1a8cff"/></svg>
-          EOF
           mkdir -p ~/.config/godot
           cat << EOF > ~/.config/godot/editor_settings-4.tres
           [gd_resource type="EditorSettings" format=3]
@@ -50,8 +44,7 @@ jobs:
       - name: Build APK
         run: |
           mkdir -p build
-          ./Godot_v4.3-stable_linux.x86_64 --headless --import
-          ./Godot_v4.3-stable_linux.x86_64 --headless --export-debug "Android" build/BlueAuraFighter.apk
+          godot --headless --export-debug "Android" build/BlueAuraFighter.apk
 
       - name: Upload APK for Download
         uses: actions/upload-artifact@v4
