@@ -18,39 +18,18 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Generate Android Debug Keystore
-        run: |
-          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android \
-            -keystore debug.keystore -storepass android \
-            -dname "CN=Android Debug,O=Android,C=US" -validity 9999 -deststoretype pkcs12
-
-      - name: Download Godot 4.3 & Export Templates
+      - name: Install Godot Headless
         run: |
           wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip
-          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz
           unzip -q Godot_v4.3-stable_linux.x86_64.zip
-          mkdir -p ~/.local/share/godot/export_templates/4.3.stable
-          unzip -q Godot_v4.3-stable_export_templates.tpz
-          mv templates/* ~/.local/share/godot/export_templates/4.3.stable/
+          mv Godot_v4.3-stable_linux.x86_64 godot_bin
 
-      - name: Configure Editor Settings for Keystore
-        run: |
-          mkdir -p ~/.config/godot
-          cat << EOF > ~/.config/godot/editor_settings-4.tres
-          [gd_resource type="EditorSettings" format=3]
-          [resource]
-          export/android/debug_keystore = "$GITHUB_WORKSPACE/debug.keystore"
-          export/android/debug_keystore_user = "androiddebugkey"
-          export/android/debug_keystore_pass = "android"
-          EOF
-
-      - name: Build APK
+      - name: Export APK Direct
         run: |
           mkdir -p build
-          ./Godot_v4.3-stable_linux.x86_64 --headless --import
-          ./Godot_v4.3-stable_linux.x86_64 --headless --export-debug "Android" build/BlueAuraFighter.apk
+          ./godot_bin --headless --export-release "Android" build/BlueAuraFighter.apk || ./godot_bin --headless --export-debug "Android" build/BlueAuraFighter.apk
 
-      - name: Upload APK for Download
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: BlueAuraFighter-APK
